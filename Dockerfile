@@ -13,33 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang
+FROM gcr.io/distroless/static
 WORKDIR /app
 
-# CFG is the path to your configuration file
-ARG CFG
-
 # Set an env var that matches your github repo name, replace treeder/dockergo here with your repo name
-ENV SRC_DIR=/src/tparty
 ENV GO111MODULE=on
-
-RUN mkdir -p ${SRC_DIR}/cmd ${SRC_DIR}/third_party ${SRC_DIR}/pkg ${SRC_DIR}/site /app/third_party /app/site
-COPY go.* $SRC_DIR/
-COPY cmd ${SRC_DIR}/cmd/
-COPY pkg ${SRC_DIR}/pkg/
-
-# Build the binary
-RUN cd $SRC_DIR && go mod download
-RUN cd $SRC_DIR/cmd/server && go build -o main
-RUN cp $SRC_DIR/cmd/server/main /app/
 
 # Setup our deployment
 COPY site /app/site/
 COPY third_party /app/third_party/
-COPY $CFG /app/config.yaml
-
-# Bad hack: pre-heat the cache in lieu of persistent storage
-RUN --mount=type=secret,id=github /app/main --github-token-file=/run/secrets/github --config /app/config.yaml --site_dir /app/site --dry_run
+COPY config.yaml /app/config.yaml
+COPY .site-cache /app/site-cache
+COPY app /app/main
 
 # Run the server at a reasonable refresh rate
-CMD ["/app/main", "--max_list_age=120s", "--max_refresh_age=20m", "--config=/app/config.yaml", "--site_dir=/app/site", "--3p_dir=/app/third_party"]
+CMD ["/app/main", "--max_list_age=120s", "--max_refresh_age=20m", "--config=/app/config.yaml", "--site_dir=/app/site", "--3p_dir=/app/third_party", "--init_cache=/app/site-cache"]

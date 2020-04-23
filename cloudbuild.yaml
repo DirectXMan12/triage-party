@@ -1,0 +1,19 @@
+steps:
+# Build the executable
+- name: mirror.gcr.io/library/golang
+  args: ['go', 'build', '-o', '/workspace/app', './cmd/server']
+  env:
+  - "CGO_ENABLED=0"
+  - "GO111MODULE=on"
+
+# hack: warm the cache
+- name: 'gcr.io/distroless/static'
+  args: ['./app', '--config=./config.yaml', '--site_dir=./site', '--dry_run', '--init_cache=/workspace/.site-cache']
+  env:
+  - "GITHUB_TOKEN=${_GH_TOKEN_PATH}"
+
+# compose the dockerfile
+#- name: 'gcr.io/kaniko-project/executor'
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/triage-party-${_SITE_NAME}', '.']
+images: ['gcr.io/$PROJECT_ID/triage-party-${_SITE_NAME}']
