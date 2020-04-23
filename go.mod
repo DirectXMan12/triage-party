@@ -3,6 +3,7 @@ module github.com/google/triage-party
 go 1.14
 
 require (
+	github.com/GoogleCloudPlatform/berglas v0.5.1
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/google/go-github/v24 v24.0.1

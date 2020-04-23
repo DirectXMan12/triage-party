@@ -28,6 +28,7 @@ import (
 	"github.com/google/go-github/v24/github"
 	"golang.org/x/oauth2"
 	"k8s.io/klog"
+	"github.com/GoogleCloudPlatform/berglas/pkg/berglas"
 
 	"github.com/google/triage-party/pkg/hubbub"
 	"github.com/google/triage-party/pkg/initcache"
@@ -87,11 +88,20 @@ func main() {
 		klog.Infof("loaded %d byte github token from %s", len(token), *tokenFileFlag)
 	}
 
+	ctx := context.Background()
+
+	if berglas.IsReference(token) {
+		tokenRaw, err := berglas.Resolve(ctx, token)
+		if err != nil {
+			klog.Exitf("unable to resolve berglas token: %v", err)
+		}
+		token = string(tokenRaw)
+	}
+
 	if len(token) < 8 {
 		klog.Exitf("github token impossibly small: %q", token)
 	}
 
-	ctx := context.Background()
 	tc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token}))
 	client := github.NewClient(tc)
 
